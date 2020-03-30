@@ -1,0 +1,31 @@
+{
+  "name": "webpack-react",
+  "version": "1.0.0",
+  "description": "create react by webpack",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "./src/index.js"
+  },
+  "bin": {
+    "cwr": "./src/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Lsky1026/webpack-react.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Lsky1026/webpack-react/issues"
+  },
+  "homepage": "https://github.com/Lsky1026/webpack-react#readme",
+  "dependencies": {
+    "chalk": "^3.0.0",
+    "commander": "^5.0.0",
+    "cross-spawn": "^7.0.1",
+    "glob": "^7.1.6",
+    "inquirer": "^7.1.0",
+    "write": "^2.0.0"
+  }
+}
