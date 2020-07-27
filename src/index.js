@@ -1,23 +1,18 @@
+#!/usr/bin/env node
+
+
 const program = require('commander')
-const inquirer = require('inquirer')
 const {generate} = require('./generate')
 
-const list = [
-  {
-    type: 'input',
-    message: '项目名称',
-    name: 'projectName',
-    default: 'webpack-react',
-  },
-]
-
 program
-  .command('create')
-  .description('create project')
-  .action(() => {
-    inquirer.prompt(list)
-      .then(res => {
-        const {projectName} = res
-        generate(projectName)
-      })
-  })
+  .option('-b, --base', '基础模板')
+
+
+program.parse(process.argv)
+
+const [projectName] = program.args
+
+// console.log(program.opts())
+// console.log(program.args)
+
+generate(projectName)

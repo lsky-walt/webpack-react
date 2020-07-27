@@ -2,9 +2,9 @@
 const chalk = require('chalk')
 const path = require('path')
 const fs = require('fs')
-const write = require('write')
+const fse = require('fs-extra')
 const glob = require('glob')
-const {execFile} = require('child_process')
+const {execFile, spawn} = require('child_process')
 const {promisify} = require('util')
 
 
@@ -13,124 +13,94 @@ const asyncExecFile = promisify(execFile)
 
 const { log } = console
 
+const prefix = 'ccc: '
+
 
 // status log
 const success = (msg = '执行成功') => {
-  log(chalk.success(msg))
+  log(`${prefix}${chalk.greenBright(msg)}`)
 }
 const warn = (msg = '警告') => {
-  log(chalk.warn(msg))
+  log(`${prefix}${chalk.yellowBright(msg)}`)
 }
 const error = (msg = '执行失败') => {
-  log(chalk.error(msg))
+  log(`${prefix}${chalk.redBright(msg)}`)
 }
 const blue = (msg) => {
-  log(chalk.blue(msg))
+  log(`${prefix}${chalk.blue(msg)}`)
 }
-
-
-// package object 
-const pkg = {
-  "name": "",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "webpack-dev-server --open",
-    "build": "webpack --mode production"
-  },
-  "author": "",
-  "license": "ISC",
-  "dependencies": {
-    
-  },
-  "devDependencies": {
-    
-  }
-}
- 
-
-
 
 
 // 当前执行目录
-const basePath = process.cwd()
+const targetPath = process.cwd()
 const pkgDir = path.join(__dirname, '../packages')
-let cur = null
 let pjn = ''
 
+
+
+// check is exists
+const isExists = (dest) => {
+  try {
+    return fs.existsSync(dest)
+  } catch (error) {
+    return false
+  }
+}
+
+const promiseSpawn = ({
+  command = '',
+  args = [],
+  option = {},
+}) => new Promise((resolve, reject) => {
+  if (!command || args.length <= 0) {
+    reject(new Error('参数不全，无法执行spawn命令...'))
+    return
+  }
+  blue(`开始执行：${command} ${args.join(' ')} >>>>>>>>>`)
+  const spawnProcess = spawn(command, args, option)
+  spawnProcess.stdout.on('data', (data) => {
+    blue(data)
+  })
+  spawnProcess.stdout.on('close', () => {
+    success('完成~')
+    resolve(true)
+  })
+  spawnProcess.on('error', (error) => {
+    error(`执行失败，失败信息：${error}`)
+    reject(error)
+  })
+})
+
+const copy = async (projectName, src = '') => {
+  try {
+    await fse.copy(path.join(pkgDir, src), path.join(targetPath, projectName))
+  } catch (err) {
+    throw err
+  }
+}
 
 // 创建项目
 const createProject = async (projectName = 'webpack-react') => {
   try {
-    cur = path.join(basePath, projectName)
-    pjn = projectName
+    const cur = path.join(targetPath, projectName)
     // 判断文件夹是否存在
     if(fs.existsSync(cur)) {
       throw new Error(`${projectName}文件夹已存在！`)
     }
     // 创建项目目录
-    await fs.mkdir(cur)
+    await fse.ensureDir(cur)
+    await copy(projectName, 'base')
   } catch (err) {
     throw err
   }
 }
 
-
-const copy = async (fileName = '') => {
-  try {
-    await fs.copyFile(path.join(pkgDir, fileName), path.join(cur, fileName))
-  } catch (err) {
-    throw err
-  }
-}
-
-const createPkg = async () => {
-  try {
-    pkg['name'] = pjn
-    await write.promise(path.join(cur, 'package.json'), JSON.stringify(pkg, null, 3))
-  } catch (err) {
-    throw err
-  }
-}
-
-
-// create base file
-// create index.html
-// webpack.config.js
-// babelrc
-// index.js
-// app.jsx
-const copyFileFromPackages = async () => {
-  try {
-    const files = await asyncGlob("**/*", {cwd: pkgDir, nodir: true, dot: true})
-    const queue = files.filter(v => copy(v))
-    await Promise.all(queue)
-  } catch (err) {
-    throw err
-  }
-}
-
-// install depances
-const execShell = async () => {
-  try {
-    const res = await asyncExecFile(path.join(__dirname, 'install.sh'), [cur])
-    const {stdout, stderr} = res
-    blue(stdout)
-    error(stderr)
-  } catch (err) {
-    throw err
-  }
-}
 
 
 const generate = async (projectName = '') => {
   try {
+    if (!projectName) return error('缺少必要值 ~ 项目名')
     await createProject(projectName)
-    await createPkg()
-    await copyFileFromPackages()
-    await execShell()
   } catch (err) {
     error(err.toString)
     throw err
